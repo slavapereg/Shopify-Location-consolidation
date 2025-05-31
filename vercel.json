@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/webhook.js": {
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "GITHUB_TOKEN": "@github_token"
+  }
+} 
