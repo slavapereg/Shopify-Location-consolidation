@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
-const { shopifyApi, LATEST_API_VERSION } = require('@shopify/admin-api-client');
+const { GraphqlClient } = require('@shopify/admin-api-client');
 
 // Configuration from environment variables
 const config = {
   shopDomain: process.env.SHOPIFY_SHOP_DOMAIN,
   accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
-  usaLocationId: process.env.USA_LOCATION_ID,
-  apiVersion: LATEST_API_VERSION
+  usaLocationId: process.env.USA_LOCATION_ID
 };
 
 // Validate configuration
@@ -17,11 +16,12 @@ if (!config.shopDomain || !config.accessToken || !config.usaLocationId) {
   process.exit(1);
 }
 
-// Initialize Shopify API client
-const shopify = shopifyApi({
-  shopDomain: config.shopDomain,
-  accessToken: config.accessToken,
-  apiVersion: config.apiVersion
+// Initialize Shopify GraphQL client
+const client = new GraphqlClient({
+  url: `https://${config.shopDomain}/admin/api/2023-10/graphql.json`,
+  headers: {
+    'X-Shopify-Access-Token': config.accessToken,
+  },
 });
 
 /**
@@ -98,7 +98,7 @@ async function moveFulfillmentOrdersToUSA(fulfillmentOrderIds) {
       };
       
       console.log(`📍 Moving fulfillment order ${fulfillmentOrderId}...`);
-      const response = await shopify.graphql(mutation, { variables });
+      const response = await client.query(mutation, { variables });
       
       if (response.fulfillmentOrderMove.userErrors.length > 0) {
         console.error(`❌ Failed to move fulfillment order ${fulfillmentOrderId}:`);
@@ -165,7 +165,7 @@ async function processOrder(order) {
     const variables = { orderId };
     
     console.log(`🔍 Fetching fulfillment orders for order ${orderId}...`);
-    const response = await shopify.graphql(query, { variables });
+    const response = await client.query(query, { variables });
     
     if (!response.order) {
       console.error('❌ Order not found');

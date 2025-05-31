@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { shopifyApi, LATEST_API_VERSION } = require('@shopify/admin-api-client');
+const { GraphqlClient } = require('@shopify/admin-api-client');
 
 // Import the order processing logic
 const { processOrder } = require('./process-single-order');
@@ -11,8 +11,7 @@ const { processOrder } = require('./process-single-order');
 const config = {
   shopDomain: process.env.SHOPIFY_SHOP_DOMAIN,
   accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
-  usaLocationId: process.env.USA_LOCATION_ID,
-  apiVersion: LATEST_API_VERSION
+  usaLocationId: process.env.USA_LOCATION_ID
 };
 
 // Validate configuration
@@ -22,11 +21,12 @@ if (!config.shopDomain || !config.accessToken || !config.usaLocationId) {
   process.exit(1);
 }
 
-// Initialize Shopify API client
-const shopify = shopifyApi({
-  shopDomain: config.shopDomain,
-  accessToken: config.accessToken,
-  apiVersion: config.apiVersion
+// Initialize Shopify GraphQL client
+const client = new GraphqlClient({
+  url: `https://${config.shopDomain}/admin/api/2023-10/graphql.json`,
+  headers: {
+    'X-Shopify-Access-Token': config.accessToken,
+  },
 });
 
 // File to store last check timestamp
@@ -104,7 +104,7 @@ async function fetchNewOrders(sinceTimestamp) {
     const variables = { since: sinceTimestamp };
     
     console.log(`🔍 Checking for orders created after ${sinceTimestamp}...`);
-    const response = await shopify.graphql(query, { variables });
+    const response = await client.query(query, { variables });
     
     return response.orders.nodes;
     
