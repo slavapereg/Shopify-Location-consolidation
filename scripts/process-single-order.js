@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-const { GraphqlClient } = require('@shopify/admin-api-client');
-
 // Configuration from environment variables
 const config = {
   shopDomain: process.env.SHOPIFY_SHOP_DOMAIN,
@@ -16,13 +14,37 @@ if (!config.shopDomain || !config.accessToken || !config.usaLocationId) {
   process.exit(1);
 }
 
-// Initialize Shopify GraphQL client
-const client = new GraphqlClient({
-  url: `https://${config.shopDomain}/admin/api/2023-10/graphql.json`,
-  headers: {
-    'X-Shopify-Access-Token': config.accessToken,
-  },
-});
+/**
+ * Make a GraphQL request to Shopify Admin API
+ * @param {string} query - GraphQL query/mutation
+ * @param {Object} variables - GraphQL variables
+ * @returns {Object} Response data
+ */
+async function shopifyGraphQL(query, variables = {}) {
+  const response = await fetch(`https://${config.shopDomain}/admin/api/2023-10/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': config.accessToken,
+    },
+    body: JSON.stringify({
+      query,
+      variables
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+  }
+
+  return result.data;
+}
 
 /**
  * Analyze fulfillment order locations
@@ -98,7 +120,7 @@ async function moveFulfillmentOrdersToUSA(fulfillmentOrderIds) {
       };
       
       console.log(`📍 Moving fulfillment order ${fulfillmentOrderId}...`);
-      const response = await client.query(mutation, { variables });
+      const response = await shopifyGraphQL(mutation, variables);
       
       if (response.fulfillmentOrderMove.userErrors.length > 0) {
         console.error(`❌ Failed to move fulfillment order ${fulfillmentOrderId}:`);
@@ -165,7 +187,7 @@ async function processOrder(order) {
     const variables = { orderId };
     
     console.log(`🔍 Fetching fulfillment orders for order ${orderId}...`);
-    const response = await client.query(query, { variables });
+    const response = await shopifyGraphQL(query, variables);
     
     if (!response.order) {
       console.error('❌ Order not found');

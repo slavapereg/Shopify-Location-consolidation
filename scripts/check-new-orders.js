@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { GraphqlClient } = require('@shopify/admin-api-client');
 
 // Import the order processing logic
 const { processOrder } = require('./process-single-order');
@@ -21,13 +20,37 @@ if (!config.shopDomain || !config.accessToken || !config.usaLocationId) {
   process.exit(1);
 }
 
-// Initialize Shopify GraphQL client
-const client = new GraphqlClient({
-  url: `https://${config.shopDomain}/admin/api/2023-10/graphql.json`,
-  headers: {
-    'X-Shopify-Access-Token': config.accessToken,
-  },
-});
+/**
+ * Make a GraphQL request to Shopify Admin API
+ * @param {string} query - GraphQL query/mutation
+ * @param {Object} variables - GraphQL variables
+ * @returns {Object} Response data
+ */
+async function shopifyGraphQL(query, variables = {}) {
+  const response = await fetch(`https://${config.shopDomain}/admin/api/2023-10/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': config.accessToken,
+    },
+    body: JSON.stringify({
+      query,
+      variables
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+  }
+
+  return result.data;
+}
 
 // File to store last check timestamp
 const TIMESTAMP_FILE = path.join(__dirname, '../.last-check-timestamp');
@@ -104,7 +127,7 @@ async function fetchNewOrders(sinceTimestamp) {
     const variables = { since: sinceTimestamp };
     
     console.log(`🔍 Checking for orders created after ${sinceTimestamp}...`);
-    const response = await client.query(query, { variables });
+    const response = await shopifyGraphQL(query, variables);
     
     return response.orders.nodes;
     
