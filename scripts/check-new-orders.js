@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { ApiVersion, shopifyApi } = require('@shopify/admin-api-client');
+const { shopifyApi, LATEST_API_VERSION } = require('@shopify/admin-api-client');
 
 // Import the order processing logic
 const { processOrder } = require('./process-single-order');
@@ -12,7 +12,7 @@ const config = {
   shopDomain: process.env.SHOPIFY_SHOP_DOMAIN,
   accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
   usaLocationId: process.env.USA_LOCATION_ID,
-  apiVersion: ApiVersion.October23
+  apiVersion: LATEST_API_VERSION
 };
 
 // Validate configuration
