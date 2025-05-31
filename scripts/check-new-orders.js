@@ -117,8 +117,8 @@ async function fetchNewOrders(sinceTimestamp) {
                 }
               }
             }
-            fulfillmentStatus
-            financialStatus
+            displayFulfillmentStatus
+            displayFinancialStatus
           }
         }
       }
@@ -166,10 +166,10 @@ async function checkNewOrders() {
     console.log(`\n📋 Processing order ${order.name}...`);
     console.log(`💰 ${order.totalPriceSet.shopMoney.amount} ${order.totalPriceSet.shopMoney.currencyCode}`);
     console.log(`📅 Created: ${order.createdAt}`);
-    console.log(`📊 Status: ${order.fulfillmentStatus || 'UNFULFILLED'} / ${order.financialStatus}`);
+    console.log(`📊 Status: ${order.displayFulfillmentStatus || 'UNFULFILLED'} / ${order.displayFinancialStatus}`);
     
     // Only process unfulfilled orders
-    if (!order.fulfillmentStatus || order.fulfillmentStatus === 'UNFULFILLED') {
+    if (!order.displayFulfillmentStatus || order.displayFulfillmentStatus === 'UNFULFILLED') {
       try {
         // Convert GraphQL order format to REST API format for compatibility
         const restFormatOrder = {
@@ -195,7 +195,7 @@ async function checkNewOrders() {
         console.error(`❌ Failed to process order ${order.name}:`, error.message);
       }
     } else {
-      console.log(`⏭️  Skipping order ${order.name} - already ${order.fulfillmentStatus}`);
+      console.log(`⏭️  Skipping order ${order.name} - already ${order.displayFulfillmentStatus}`);
     }
     
     // Add delay between orders to avoid rate limiting
