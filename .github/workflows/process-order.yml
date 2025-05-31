@@ -1,0 +1,30 @@
+name: Process Shopify Order
+
+on:
+  repository_dispatch:
+    types: [order_created]
+
+jobs:
+  process-order:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm install @shopify/admin-api-client
+        
+    - name: Process Order
+      env:
+        SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
+        SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+        USA_LOCATION_ID: ${{ secrets.USA_LOCATION_ID }}
+      run: |
+        node scripts/process-single-order.js '${{ toJson(github.event.client_payload.order) }}' 
