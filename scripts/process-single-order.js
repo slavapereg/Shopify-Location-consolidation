@@ -274,7 +274,7 @@ async function getOrderIdByName(orderName) {
 async function fetchUnfulfilledOrders() {
   const query = `
     query getUnfulfilledOrders {
-      orders(first: 50, query: "fulfillment_status:unfulfilled created_at:<2025-05-27") {
+      orders(first: 50, query: "fulfillment_status:unfulfilled created_at:>2025-05-27") {
         edges {
           node {
             id
@@ -311,7 +311,7 @@ async function fetchUnfulfilledOrders() {
     }
   `;
 
-  console.log('🔍 Fetching unfulfilled orders created before May 27, 2025...');
+  console.log('🔍 Fetching unfulfilled orders created after May 27, 2025...');
   const data = await shopifyGraphQL(query);
   return data.orders.edges.map(edge => edge.node);
 }
@@ -349,7 +349,25 @@ async function main() {
 
   // Load previously processed orders
   const { processedOrders, lastRun } = loadProcessedOrders();
-  console.log(`📊 Last run: ${lastRun || 'Never'}`);
+  const currentRun = new Date().toISOString();
+  
+  // Format timestamps for better readability
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
+  };
+
+  console.log(`📊 Last run: ${formatDate(lastRun)}`);
+  console.log(`📊 Current run: ${formatDate(currentRun)}`);
   console.log(`📊 Previously processed orders: ${processedOrders.length}`);
 
   // Collect report data
@@ -442,7 +460,7 @@ async function main() {
     // Save updated processed orders list
     saveProcessedOrders({
       processedOrders: Array.from(newProcessedOrders),
-      lastRun: new Date().toISOString()
+      lastRun: currentRun
     });
 
     // Print summary report
