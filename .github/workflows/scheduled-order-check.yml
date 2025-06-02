@@ -2,8 +2,8 @@ name: Scheduled Order Check
 
 on:
   schedule:
-    # Run every 2 minutes
-    - cron: '*/2 * * * *'
+    # Run every 1 hour
+    - cron: '0 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -19,10 +19,10 @@ jobs:
       with:
         node-version: '18'
         
-    - name: Check for new orders
+    - name: Process unfulfilled orders
       env:
         SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
         SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
         USA_LOCATION_ID: ${{ secrets.USA_LOCATION_ID }}
       run: |
-        node scripts/check-new-orders.js 
+        node scripts/process-single-order.js 
