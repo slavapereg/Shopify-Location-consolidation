@@ -19,6 +19,15 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+
+    - name: Cache processed orders
+      uses: actions/cache@v3
+      id: processed-orders-cache
+      with:
+        path: scripts/processed-orders.json
+        key: processed-orders-${{ runner.os }}
+        restore-keys: |
+          processed-orders-${{ runner.os }}
         
     - name: Process unfulfilled orders
       env:
@@ -26,4 +35,13 @@ jobs:
         SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
         USA_LOCATION_ID: ${{ secrets.USA_LOCATION_ID }}
       run: |
-        node scripts/process-single-order.js 
+        node scripts/process-single-order.js
+
+    - name: Upload processed orders cache
+      uses: actions/cache@v3
+      if: steps.processed-orders-cache.outputs.cache-hit != 'true'
+      with:
+        path: scripts/processed-orders.json
+        key: processed-orders-${{ runner.os }}
+        restore-keys: |
+          processed-orders-${{ runner.os }} 
