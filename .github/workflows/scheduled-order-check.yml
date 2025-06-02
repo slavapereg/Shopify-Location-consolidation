@@ -2,8 +2,9 @@ name: Scheduled Order Check
 
 on:
   schedule:
-    # Run every 1 hour
-    - cron: '0 * * * *'
+    # Run every hour except between 10:00 UTC and 21:00 UTC
+    - cron: '0 0-9 * * *'  # Run at minute 0 of hours 0-9 UTC
+    - cron: '0 22-23 * * *'  # Run at minute 0 of hours 22-23 UTC
   workflow_dispatch: # Allow manual trigger
 
 jobs:
